@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# # Pyber Challenge
+
+# ### 4.3 Loading and Reading CSV files
+
+# In[79]:
+
+
 # Add Matplotlib inline magic command
 #get_ipython().run_line_magic('matplotlib', 'inline')
 # Dependencies and Setup
@@ -5,36 +15,38 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # File to Load (Remember to change these)
-city_file = "Input/city_data.csv"
-ride_file = "Input/ride_data.csv"
+city_data_to_load = "Input/city_data.csv"
+ride_data_to_load = "Input/ride_data.csv"
 
 # Read the City and Ride Data
-city_data_df = pd.read_csv(city_file)
-ride_data_df = pd.read_csv(ride_file)
+city_data_df = pd.read_csv(city_data_to_load)
+ride_data_df = pd.read_csv(ride_data_to_load)
 
 
 # ### Merge the DataFrames
-
 # Combine the data into a single dataset
-pyber_data_df = pd.merge(ride_data_df, city_data_df, how="left", on=["city", "city"])
-
+pyber_data_df = pd.merge(ride_data_df, city_data_df, how="left", on="city")
 # Display the data table for preview
-pyber_data_df.head(15)
-
-
 # ## Challenge Deliverable 1. Generate a Ride-Sharing DataFrame by City Type
 
 #  1. Get the total rides for each city type
-type_chk = pyber_data_df["type"].value_counts()
-
-# Urban = pyber_data_df.loc[pyber_data_df["type"] == "Urban"]
-# Suburban = pyber_data_df.loc[pyber_data_df["type"] == "Suburban"]
-# Rural = pyber_data_df.loc[pyber_data_df["type"] == "Rural"]
 
 CityTy_Rides = pyber_data_df.groupby("type").count()["ride_id"]
 
+
+
+# In[134]:
+
+
 # 2. Get the total drivers for each city type
-CityTy_Drivers = pyber_data_df.groupby("type").sum()["driver_count"]
+CityTy_Drivers = pyber_data_df.groupby(["type", "city"]).max()["driver_count"]
+Urban_driver = CityTy_Drivers["Urban"].sum()
+Suburban_driver = CityTy_Drivers["Suburban"].sum()
+Rural_driver = CityTy_Drivers["Rural"].sum()
+
+Drivers_dict = {"Urban": Urban_driver, "Suburban": Suburban_driver, "Rural": Rural_driver}
+drivers = pd.Series(Drivers_dict)
+drivers.index.rename("type", inplace=True)
 
 #  3. Get the total amount of fares for each city type
 CityTy_Fares = pyber_data_df.groupby("type").sum()["fare"]
@@ -43,13 +55,13 @@ CityTy_Fares = pyber_data_df.groupby("type").sum()["fare"]
 CityTy_Avg_Fare = CityTy_Fares/CityTy_Rides
 
 # 5. Get the average fare per driver for each city type. 
-CityTy_Avg_Fare_Driver = CityTy_Fares/CityTy_Drivers
+CityTy_Avg_Fare_Driver = CityTy_Fares/drivers
 
 #  6. Create a PyBer summary DataFrame. 
 City_Type_Summary_df = pd.DataFrame({
     "Total Rides": CityTy_Rides,
     "Total Fares": CityTy_Fares,
-    "Total Drivers": CityTy_Drivers,
+    "Total Drivers": Drivers_dict,
     "Average Cost per Trip": CityTy_Avg_Fare,
     "Average Driver Intake": CityTy_Avg_Fare_Driver}, index=["Urban", "Suburban", "Rural"])
 City_Type_Summary_df.head(10)
@@ -74,6 +86,7 @@ print(pyber_data_df)
 pyber_by_date = pyber_data_df.groupby(["date", "type"])["fare"].sum()
 
 # 2. Reset the index on the DataFrame you created in #1. This is needed to use the 'pivot()' function.
+# df = df.reset_index()
 pyber_by_date = pyber_by_date.reset_index()
 
 # 3. Create a pivot table with the 'date' as the index, the columns ='type', and values='fare' 
@@ -113,6 +126,8 @@ img = plt.gcf()
 img.set_size_inches(12,4)
 plt.tight_layout()
 plt.savefig("Output/Pyber_Fares.png", dpi=200)
+
+
 
 
 
